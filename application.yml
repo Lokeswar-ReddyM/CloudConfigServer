@@ -1,0 +1,49 @@
+server:
+  port: 8084
+  
+spring:
+  application:
+    name: API-GATEWAY
+  cloud:
+    gateway:
+      routes:
+      - id: order-service
+        uri: lb://ORDER_SVC
+        predicates:
+        - Path=/order/**
+        filters:
+        - name: CircuitBreaker
+          args:
+            name: order-service
+            fallbackuri: forward:/orderFallback
+      - id: payment-service
+        uri: lb://PAYMENT_SVC
+        predicates:
+        - path=/paument/**
+        filters:
+        - name: CircuitBreaker
+          args:
+            name: order-service
+            fallbackuri: forward:/paymentFallback
+
+eureka:
+  client:
+    fetch-registry: true
+    register-with-eureka: true
+    service-url:
+      defaultZone: http//localhost:8761/eureka
+  instance:
+    hostname: localhost
+    
+management:
+  endpoints:
+    web:
+      base-path: /actuator/hystrix.stream
+
+resilience4j:
+  retry:
+    instances:
+      myRetry:
+        max-attempts: 3
+        wait-duration: 5s                  
+            
